@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>計票器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .total {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .candidate {
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .candidate-name {
+            font-size: 18px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .new-candidate {
+            margin-bottom: 20px;
+        }
+
+        .adjust-votes {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="total">
+            剩餘票數: <span id="remainingVotesDisplay">100</span>
+            <div class="adjust-votes">
+                調整剩餘票數: <input type="number" id="adjustRemainingVotes" value="100">
+                <button id="setRemainingVotes">設定</button>
+            </div>
+        </div>
+        <div class="new-candidate">
+            新增候選人: <input type="text" id="newCandidateName" placeholder="候選人名稱">
+            <button id="addNewCandidate">新增</button>
+        </div>
+        <ul id="candidates"></ul>
+    </div>
+
+    <script>
+        const remainingVotesDisplay = document.getElementById("remainingVotesDisplay");
+        const remainingVotesInput = document.getElementById("adjustRemainingVotes");
+        const candidatesEl = document.getElementById("candidates");
+
+        const candidates = [];
+
+        let remainingVotes = 100;
+
+        function updateUI() {
+            candidatesEl.innerHTML = '';
+            remainingVotesDisplay.textContent = remainingVotes;
+
+            const sortedCandidates = [...candidates].sort((a, b) => b.votes - a.votes);
+            sortedCandidates.forEach(candidate => {
+                const li = document.createElement("li");
+                li.classList.add("candidate");
+
+                const nameEl = document.createElement("span");
+                nameEl.textContent = candidate.name;
+                li.appendChild(nameEl);
+
+                const controls = document.createElement("div");
+                controls.classList.add("controls");
+                li.appendChild(controls);
+
+                const addButton = document.createElement("button");
+                addButton.textContent = "增票";
+                addButton.disabled = remainingVotes <= 0;
+                addButton.addEventListener("click", () => {
+                    if (remainingVotes > 0) {
+                        candidate.votes++;
+                        remainingVotes--;
+                        updateUI();
+                    }
+                });
+                controls.appendChild(addButton);
+
+                const subtractButton = document.createElement("button");
+                subtractButton.textContent = "減票";
+                subtractButton.disabled = candidate.votes <= 0;
+                subtractButton.addEventListener("click", () => {
+                    if (candidate.votes > 0) {
+                        candidate.votes--;
+                        remainingVotes++;
+                        updateUI();
+                    }
+                });
+                controls.appendChild(subtractButton);
+
+                const votesEl = document.createElement("span");
+                votesEl.textContent = `票數: ${candidate.votes}`;
+                controls.appendChild(votesEl);
+
+                candidatesEl.appendChild(li);
+            });
+        }
+
+        document.getElementById("addNewCandidate").addEventListener("click", () => {
+            const name = document.getElementById("newCandidateName").value;
+            if (name) {
+                candidates.push({ id: Date.now(), name: name, votes: 0 });
+                document.getElementById("newCandidateName").value = '';
+                updateUI();
+            }
+        });
+
+        document.getElementById("setRemainingVotes").addEventListener("click", () => {
+            const newRemainingVotes = parseInt(remainingVotesInput.value, 10);
+            if (newRemainingVotes >= 0) {
+                remainingVotes = newRemainingVotes;
+                updateUI();
+            }
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
