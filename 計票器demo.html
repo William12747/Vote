@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>計票器</title>
     <style>
+        #app {
+            width: 40%;
+            margin: 50px auto;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
@@ -19,13 +25,15 @@
         .candidate {
             display: flex;
             justify-content: space-between;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(0, 0, 0, 0.445);  /* 默認的邊框顏色是黑色 */
+            border-radius: 15px;     /* 設定圓角的半徑 */
             padding: 10px;
             margin-bottom: 10px;
+            transition: background-color 0.3s; /* 0.3秒的過渡效果 */
         }
 
-        .candidate-name {
-            font-size: 18px;
+        .candidate:hover {
+            background-color: rgba(0, 208, 255, 0.294);
         }
 
         .controls {
@@ -36,6 +44,12 @@
         button {
             padding: 5px 10px;
             cursor: pointer;
+            transition: background-color 0.8s;
+        }
+
+        button:hover {
+            background-color: rgba(0, 208, 255, 0.294);
+            border: 2px solid rgba(233, 7, 33, 0.695);
         }
 
         .new-candidate {
@@ -47,6 +61,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <div class="total">
@@ -65,11 +80,9 @@
 
     <script>
         const remainingVotesDisplay = document.getElementById("remainingVotesDisplay");
-        const remainingVotesInput = document.getElementById("adjustRemainingVotes");
         const candidatesEl = document.getElementById("candidates");
 
         const candidates = [];
-
         let remainingVotes = 100;
 
         function updateUI() {
@@ -78,47 +91,79 @@
 
             const sortedCandidates = [...candidates].sort((a, b) => b.votes - a.votes);
             sortedCandidates.forEach(candidate => {
-                const li = document.createElement("li");
-                li.classList.add("candidate");
-
-                const nameEl = document.createElement("span");
-                nameEl.textContent = candidate.name;
-                li.appendChild(nameEl);
-
-                const controls = document.createElement("div");
-                controls.classList.add("controls");
-                li.appendChild(controls);
-
-                const addButton = document.createElement("button");
-                addButton.textContent = "增票";
-                addButton.disabled = remainingVotes <= 0;
-                addButton.addEventListener("click", () => {
-                    if (remainingVotes > 0) {
-                        candidate.votes++;
-                        remainingVotes--;
-                        updateUI();
-                    }
-                });
-                controls.appendChild(addButton);
-
-                const subtractButton = document.createElement("button");
-                subtractButton.textContent = "減票";
-                subtractButton.disabled = candidate.votes <= 0;
-                subtractButton.addEventListener("click", () => {
-                    if (candidate.votes > 0) {
-                        candidate.votes--;
-                        remainingVotes++;
-                        updateUI();
-                    }
-                });
-                controls.appendChild(subtractButton);
-
-                const votesEl = document.createElement("span");
-                votesEl.textContent = `票數: ${candidate.votes}`;
-                controls.appendChild(votesEl);
-
+                const li = createCandidateElement(candidate);
                 candidatesEl.appendChild(li);
             });
+
+            if (remainingVotes === 0) {
+                displayTopThreeCandidates();
+            }
+        }
+
+        function createCandidateElement(candidate) {
+            const li = document.createElement("li");
+            li.classList.add("candidate");
+
+            const nameEl = document.createElement("span");
+            nameEl.textContent = candidate.name;
+            li.appendChild(nameEl);
+
+            const controls = document.createElement("div");
+            controls.classList.add("controls");
+            li.appendChild(controls);
+
+            const addButton = createVoteButton("增票", () => {
+                candidate.votes++;
+                remainingVotes--;
+            });
+            const subtractButton = createVoteButton("減票", () => {
+                candidate.votes--;
+                remainingVotes++;
+            });
+            const deleteButton = createDeleteButton(candidate);
+
+            controls.appendChild(addButton);
+            controls.appendChild(subtractButton);
+            controls.appendChild(deleteButton);
+
+            const votesEl = document.createElement("span");
+            votesEl.textContent = `票數: ${candidate.votes}`;
+            controls.appendChild(votesEl);
+
+            return li;
+        }
+
+        function createVoteButton(text, action) {
+            const button = document.createElement("button");
+            button.textContent = text;
+            button.addEventListener("click", () => {
+                action();
+                updateUI();
+            });
+            return button;
+        }
+
+        function createDeleteButton(candidate) {
+            const button = document.createElement("button");
+            button.textContent = "刪除";
+            button.addEventListener("click", () => {
+                const index = candidates.findIndex(c => c.id === candidate.id);
+                if (index !== -1) {
+                    remainingVotes += candidate.votes;
+                    candidates.splice(index, 1);
+                    updateUI();
+                }
+            });
+            return button;
+        }
+
+        function displayTopThreeCandidates() {
+            const topThree = candidates.slice(0, 3);
+            let message = '前三名候選人:\n';
+            topThree.forEach((c, i) => {
+                message += `第 ${i + 1} 名: ${c.name} - ${c.votes} 票\n`;
+            });
+            alert(message);
         }
 
         document.getElementById("addNewCandidate").addEventListener("click", () => {
@@ -131,9 +176,9 @@
         });
 
         document.getElementById("setRemainingVotes").addEventListener("click", () => {
-            const newRemainingVotes = parseInt(remainingVotesInput.value, 10);
-            if (newRemainingVotes >= 0) {
-                remainingVotes = newRemainingVotes;
+            const newVotes = parseInt(document.getElementById("adjustRemainingVotes").value, 10);
+            if (newVotes >= 0) {
+                remainingVotes = newVotes;
                 updateUI();
             }
         });
@@ -141,4 +186,5 @@
         updateUI();
     </script>
 </body>
+
 </html>
